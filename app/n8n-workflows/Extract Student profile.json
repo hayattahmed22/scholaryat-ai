@@ -1,0 +1,272 @@
+{
+  "name": "Extract Student profile",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Extract a clean student profile from this student data.\n\nResume:\n{{ $json.body.resume || $json.body.pastedText || $json.body.resumeText || \"\" }}\n\nTranscript:\n{{ $json.body.transcript || \"\" }}\n\nReturn ONLY valid JSON. No markdown. No explanation.\n\n{\n  \"gpa\": \"\",\n  \"major\": \"\",\n  \"citizenship\": \"\",\n  \"education_level\": \"\",\n  \"interests\": [],\n  \"location\": \"\",\n  \"skills\": [],\n  \"awards\": [],\n  \"activities\": []\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c3a0d592-2e6d-4aea-bad7-d7af7fbe64f3",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "MVQOpMe3zvL6OTxb",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        0
+      ],
+      "id": "a390805b-60be-4af4-8d06-6be833c6ba72",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8edd67b8-e5b5-4ced-8b2a-5bf713f8c59a",
+              "name": "result",
+              "value": "={{$json.output[0].content[0].text}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        256
+      ],
+      "id": "e93a2b65-7e25-4633-9191-9c602d1945fa",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = $json.result;\n\n// remove ```json and ``` if present\nraw = raw.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\ntry {\n  const parsed = JSON.parse(raw);\n\n  // ensure citizenship is never empty\n  if (!parsed.citizenship || parsed.citizenship === \"\") {\n    parsed.citizenship = \"Unknown\";\n  }\n\n  return [{ json: parsed }];\n\n} catch (e) {\n  return [\n    {\n      json: {\n        error: \"Invalid JSON\",\n        raw: raw,\n      },\n    },\n  ];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        256
+      ],
+      "id": "4f05478a-8605-43cc-957a-68078056a65e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "tableId": "profiles",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "full_name",
+              "fieldValue": "={{$json.full_name}}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{$json.email}}"
+            },
+            {
+              "fieldId": "gpa",
+              "fieldValue": "={{$json.gpa}}"
+            },
+            {
+              "fieldId": "major",
+              "fieldValue": "={{$json.major}}"
+            },
+            {
+              "fieldId": "school_year",
+              "fieldValue": "={{$json.school_year}}"
+            },
+            {
+              "fieldId": "citizenship",
+              "fieldValue": "={{$json.citizenship}}"
+            },
+            {
+              "fieldId": "skills",
+              "fieldValue": "={{$json.skills}}"
+            },
+            {
+              "fieldId": "extracurriculars",
+              "fieldValue": "={{$json.extracurriculars}}"
+            },
+            {
+              "fieldId": "awards",
+              "fieldValue": "= {{$json.awards}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        800,
+        256
+      ],
+      "id": "5a76ecc0-0d8d-41de-acc0-d4ef9ab4e3c6",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "i0jZyYAXNKC0FrVl",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "scholarships"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        240
+      ],
+      "id": "59a93d24-1387-41d7-be85-f56e3b0a854c",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "i0jZyYAXNKC0FrVl",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = $json.output[0].content[0].text;\n\n// remove ```json and ``` if present\nraw = raw.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\ntry {\n  const parsed = JSON.parse(raw);\n  return [{ json: parsed }];\n} catch (e) {\n  return [{ json: { error: \"Invalid JSON\", raw } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "3118d998-0db9-470d-8e79-e440117bf3a0",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nif (!data.matches || !Array.isArray(data.matches)) {\n  return [{ json: { error: \"No matches found\", original: data } }];\n}\n\nconst results = data.matches.map(match => {\n  const title = match.title || \"Scholarship Deadline\";\n  const details = `${match.reason || \"\"}\\n${match.link || \"\"}`.trim();\n\n  let dates = \"\";\n  if (match.deadline) {\n    const start = match.deadline.replace(/-/g, \"\") + \"T090000Z\";\n    const end = match.deadline.replace(/-/g, \"\") + \"T100000Z\";\n    dates = `${start}/${end}`;\n  }\n\n  const calendarLink =\n    `https://calendar.google.com/calendar/render?action=TEMPLATE` +\n    `&text=${encodeURIComponent(title)}` +\n    `&details=${encodeURIComponent(details)}` +\n    `&dates=${encodeURIComponent(dates)}`;\n\n  return {\n    title: match.title,\n    deadline: match.deadline,\n    link: match.link,\n    reason: match.reason,\n    calendar_link: calendarLink\n  };\n});\n\nreturn [{ json: { matches: results } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        256
+      ],
+      "id": "92e4ff94-ee63-4f3d-83a0-eae1895805b1",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "extract-profile",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "b8690dc1-6a0e-4e4b-8321-ae586a8eadb1",
+      "name": "Webhook",
+      "webhookId": "c5e8fa0f-dcef-4aa0-b1c5-3a68b48e6876"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e82f553a-f54a-45b4-8245-b73aaa700e42",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "46d48cc2c7e37b906755e66304f71eebab95c1ff4b183a4ecadbaaaf45f5fa95"
+  },
+  "id": "Ju9NXc42vXiULF1C",
+  "tags": []
+}

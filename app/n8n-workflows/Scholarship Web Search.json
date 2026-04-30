@@ -1,0 +1,238 @@
+{
+  "name": "Scholarship Web Search",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -160,
+        304
+      ],
+      "id": "887fdd0c-0da8-4c74-9e4e-e7c395d4d231",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        192
+      ],
+      "id": "9b899e12-c7fc-4e49-980d-633ed13aafd8",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "MVQOpMe3zvL6OTxb",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are Scholaryat, an AI scholarship matching assistant.\n\nMatch the real student profile to the scholarships below.\n\nStudent profile:\n{{ JSON.stringify($json) }}\n\nScholarships:\n{{ JSON.stringify($items(\"Database\").map(item => item.json)) }}\n\nReturn the top 10 best scholarship matches.\n\nRules:\n- ONLY use scholarships from the provided scholarship list.\n- Do NOT invent scholarships.\n- Do NOT invent links.\n- Use the exact link from the database.\n- If deadline, amount, or link is missing, use null.\n- Rank by eligibility fit first, then major/interests fit, then GPA/merit fit.\n- Prefer scholarships with clear deadlines and application links.\n- Return ONLY valid JSON.\n- No markdown.\n- No explanation outside JSON.\n\nJSON format:\n{\n  \"matches\": [\n    {\n      \"title\": \"\",\n      \"match_score\": 0,\n      \"amount\": \"\",\n      \"deadline\": \"\",\n      \"link\": \"\",\n      \"reason\": \"\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        560,
+        0
+      ],
+      "id": "e137ffe7-54b3-4327-a59b-c1a87ae7e144",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "MVQOpMe3zvL6OTxb",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "scholarships",
+        "limit": 5
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        48,
+        0
+      ],
+      "id": "d31f2703-20fc-483e-b303-ce28bcc8fd0f",
+      "name": "Database",
+      "credentials": {
+        "supabaseApi": {
+          "id": "i0jZyYAXNKC0FrVl",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "match-scholarships",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        0
+      ],
+      "id": "9c9f5538-978c-4468-84be-acdc88bc158f",
+      "name": "Webhook",
+      "webhookId": "579dbfc8-02ec-4e71-91ad-c3128ecb6703"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1088,
+        0
+      ],
+      "id": "9b4f10c1-af78-40a6-abfa-fc412237afb7",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    title: item.json.title,\n    amount: item.json.amount,\n    deadline: item.json.deadline,\n    eligibility: item.json.eligibility,\n    link: item.json.link\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "6f386bdc-38dd-423d-b14b-682a9e8437de",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.output?.[0]?.content?.[0]?.text || \"\";\n\nconst cleaned = text\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nconst parsed = JSON.parse(cleaned);\n\nreturn [\n  {\n    json: parsed\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        0
+      ],
+      "id": "fe80cfd5-53c4-4546-9154-4c6670784cb4",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Database": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d25b9c28-0019-4af7-b764-ece4d1c11e45",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "46d48cc2c7e37b906755e66304f71eebab95c1ff4b183a4ecadbaaaf45f5fa95"
+  },
+  "id": "5RcoI09RSOqdycu9",
+  "tags": []
+}
