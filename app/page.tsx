@@ -47,7 +47,12 @@ export default function ScholarshipMatcher() {
 
   const planLimit = getPlanLimit(currentPlan);
   const visibleMatches = matches.slice(0, planLimit);
-  const lockedCount = Math.max(0, matches.length - planLimit);
+
+  // FORCE unlock card to show for free users after matches load
+  const lockedCount =
+    currentPlan === "free" && matches.length > 0
+      ? Math.max(5, matches.length - planLimit)
+      : Math.max(0, matches.length - planLimit);
 
   async function findScholarships() {
     setLoading(true);
@@ -104,22 +109,12 @@ ${transcript}
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-white/80 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
-            <img
-              src="/logo.png"
-              alt="Scholyat AI"
-              className="h-10 w-10 object-contain"
-            />
-            <span className="text-lg font-bold text-foreground">
-              Scholyat AI
-            </span>
+            <img src="/logo.png" alt="Scholyat AI" className="h-10 w-10 object-contain" />
+            <span className="text-lg font-bold text-foreground">Scholyat AI</span>
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowPricing(!showPricing)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setShowPricing(!showPricing)}>
               Pricing
             </Button>
 
@@ -164,9 +159,7 @@ ${transcript}
 
             <CardContent className="space-y-6">
               <div className="space-y-3">
-                <label className="text-sm font-medium text-foreground">
-                  Resume
-                </label>
+                <label className="text-sm font-medium text-foreground">Resume</label>
 
                 <FileDropzone
                   label="Drop your resume here"
@@ -185,9 +178,7 @@ ${transcript}
               </div>
 
               <div className="space-y-3">
-                <label className="text-sm font-medium text-foreground">
-                  Transcript
-                </label>
+                <label className="text-sm font-medium text-foreground">Transcript</label>
 
                 <FileDropzone
                   label="Drop your transcript here"
@@ -290,7 +281,7 @@ ${transcript}
                       calendar_link={match.calendar_link}
                       canAccessCalendar={currentPlan !== "free"}
                       onUpgradeClick={() => setShowPricing(true)}
-                      score={Math.round((match.match_score ?? 0) * 10)}
+                      score={match.match_score ?? 0}
                     />
                   ))}
 
@@ -312,21 +303,11 @@ ${transcript}
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-8 opacity-50 grayscale">
-            <span className="text-lg font-semibold text-muted-foreground">
-              Stanford
-            </span>
-            <span className="text-lg font-semibold text-muted-foreground">
-              MIT
-            </span>
-            <span className="text-lg font-semibold text-muted-foreground">
-              Harvard
-            </span>
-            <span className="text-lg font-semibold text-muted-foreground">
-              Berkeley
-            </span>
-            <span className="text-lg font-semibold text-muted-foreground">
-              Yale
-            </span>
+            <span className="text-lg font-semibold text-muted-foreground">Stanford</span>
+            <span className="text-lg font-semibold text-muted-foreground">MIT</span>
+            <span className="text-lg font-semibold text-muted-foreground">Harvard</span>
+            <span className="text-lg font-semibold text-muted-foreground">Berkeley</span>
+            <span className="text-lg font-semibold text-muted-foreground">Yale</span>
           </div>
         </div>
       </main>
@@ -335,14 +316,8 @@ ${transcript}
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2">
-              <img
-                src="/logo.png"
-                alt="Scholyat AI"
-                className="h-8 w-8 object-contain"
-              />
-              <span className="font-semibold text-foreground">
-                Scholyat AI
-              </span>
+              <img src="/logo.png" alt="Scholyat AI" className="h-8 w-8 object-contain" />
+              <span className="font-semibold text-foreground">Scholyat AI</span>
             </div>
 
             <p className="text-sm text-muted-foreground">
