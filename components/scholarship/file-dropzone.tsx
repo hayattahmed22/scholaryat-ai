@@ -18,25 +18,88 @@ export function FileDropzone({
   onFileUpload,
   hasContent,
 }: FileDropzoneProps) {
+  async function readPdf(file: File) {
+    const pdfjsLib = await import("pdfjs-dist");
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = "";
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(" ");
+
+      fullText += pageText + "\n\n";
+    }
+
+    return fullText.trim();
+  }
+
+  async function readDocx(file: File) {
+    const mammoth = await import("mammoth/mammoth.browser");
+    const arrayBuffer = await file.arrayBuffer();
+
+    const result = await mammoth.extractRawText({ arrayBuffer });
+
+    return result.value.trim();
+  }
+
   async function handleFile(file: File) {
     onFileUpload(file);
 
     const fileName = file.name.toLowerCase();
 
-    if (fileName.endsWith(".txt")) {
-      const text = await file.text();
-      onFileContent(text);
-      return;
-    }
+    try {
+      onFileContent(`Reading file: ${file.name}...`);
 
-    if (fileName.endsWith(".pdf") || fileName.endsWith(".docx")) {
+      if (fileName.endsWith(".txt")) {
+        const text = await file.text();
+        onFileContent(text);
+        return;
+      }
+
+      if (fileName.endsWith(".pdf")) {
+        const text = await readPdf(file);
+
+        if (!text) {
+          onFileContent(
+            `File uploaded: ${file.name}\n\nCould not extract text from this PDF. Please paste the text manually.`
+          );
+          return;
+        }
+
+        onFileContent(text);
+        return;
+      }
+
+      if (fileName.endsWith(".docx")) {
+        const text = await readDocx(file);
+
+        if (!text) {
+          onFileContent(
+            `File uploaded: ${file.name}\n\nCould not extract text from this DOCX. Please paste the text manually.`
+          );
+          return;
+        }
+
+        onFileContent(text);
+        return;
+      }
+
+      onFileContent("Unsupported file type. Please upload PDF, DOCX, or TXT.");
+    } catch (error) {
+      console.error("File reading error:", error);
       onFileContent(
-        `File uploaded: ${file.name}\n\nPDF/DOCX text extraction is not enabled yet. Please copy and paste the resume text below for now.`
+        `File uploaded: ${file.name}\n\nCould not read this file. Please paste the text manually.`
       );
-      return;
     }
-
-    onFileContent("Unsupported file type. Please upload PDF, DOCX, or TXT.");
   }
 
   return (
