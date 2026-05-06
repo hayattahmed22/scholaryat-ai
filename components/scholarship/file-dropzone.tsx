@@ -52,18 +52,32 @@ export function FileDropzone({
   }
 
   async function handleFile(file: File) {
-    onFileUpload(file);
+  onFileUpload(file);
+  onFileContent(`Reading file: ${file.name}...`);
 
-    const fileName = file.name.toLowerCase();
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
 
-    try {
-      onFileContent(`Reading file: ${file.name}...`);
+    const res = await fetch("/api/extract-file", {
+      method: "POST",
+      body: formData,
+    });
 
-      if (fileName.endsWith(".txt")) {
-        const text = await file.text();
-        onFileContent(text);
-        return;
-      }
+    const data = await res.json();
+
+    if (!res.ok || !data.text) {
+      throw new Error(data.error || "Could not extract text");
+    }
+
+    onFileContent(data.text);
+  } catch (error) {
+    console.error(error);
+    onFileContent(
+      `File uploaded: ${file.name}\n\nCould not extract text from this file. Please paste the text manually.`
+    );
+  }
+}
 
       if (fileName.endsWith(".pdf")) {
         const text = await readPdf(file);
