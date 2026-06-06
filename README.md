@@ -2,7 +2,7 @@
 
 🚀 AI-powered scholarship matching platform that analyzes student resumes and transcripts to deliver **highly personalized scholarship recommendations**.
 
-🌐 **Live Demo:** https://your-vercel-link.vercel.app  
+🌐 **Live Demo:** https://scholaryat-mtzp2qaqa-hxyxt58-5414s-projects.vercel.app/ 
 📂 **GitHub Repo:** https://github.com/hayattahmed22/scholaryat-ai
 
 ---
